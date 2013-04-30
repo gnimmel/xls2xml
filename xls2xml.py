@@ -16,10 +16,11 @@ if cmd_folder not in sys.path:
 
 from library import xlrd
 
-def toXML(filename, node_name, cellsAs):
+def toXML(filename, node_name, cellsAs, output_file):
     xlsFile = xlrd.open_workbook(filename)
     firstSheet = xlsFile.sheet_by_index(0)
     attributes = firstSheet.row_values(0)
+
     for rownum in range(1, firstSheet.nrows):
         firstSheet.row_values(rownum) 
         cells = [ convertFloatsToIntStrings(i) for i in firstSheet.row_values(rownum) ]
@@ -27,7 +28,8 @@ def toXML(filename, node_name, cellsAs):
             s = xmlRowAsAttributes(node_name, attributes, cells, rownum)
         elif (cellsAs == "nodes"):
             s = xmlRowAsNodes(node_name, attributes, cells, rownum)
-        print s
+        output_file.write(s)
+        #print s
 
 def xmlRowAsAttributes(node_name, attributes, cells, rownum):
     s = "<" + node_name + " "
@@ -46,7 +48,7 @@ def xmlRowAsNodes(node_name, attributes, cells, rownum):
             + "</" + sanitizeAttributeName(attributes[index].strip()) + ">\n"
         rows.append(r)
     s += "".join(rows)
-    s += "</" + node_name + ">"
+    s += "</" + node_name + ">\n"
     return s
 
 def convertFloatsToIntStrings(i):
@@ -72,8 +74,14 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--root-node", help="wrap nodes in specified root node")
     parser.add_argument("-c", "--cells-as", help="use attributes or nodes for cell values", default="attributes", choices=["attributes", "nodes"])
     args = parser.parse_args()
+    
+    output_file = args.filename[0:args.filename.rfind(".")+1] + "xml";
+    fo = open(output_file, 'w+')
+
     if (args.root_node != None):
-        print "<" + args.root_node + ">"
-    toXML(args.filename, args.node, args.cells_as)
+        fo.write("<" + args.root_node + ">\n")
+
+    toXML(args.filename, args.node, args.cells_as, fo)
+    
     if (args.root_node != None):
-        print "</" + args.root_node + ">"
+        fo.write("</" + args.root_node + ">")
